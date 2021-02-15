@@ -115,7 +115,7 @@ map.addLayer({
 'fill-color': ["match", ["get","ganador"],
         "PSC", "#cc001e",
         "PP", "#3dc8ff",
-        "JxCat", "#023382",
+        "JxCat", "#37d4c1",
         "ERC", "#e8c60b",
         "Cs", "#ff9324",
         "CUP", "#e8de74",
@@ -196,12 +196,14 @@ var popup = new mapboxgl.Popup({
         popup.remove();
         if (hoveredStateId) {          
           map.setFeatureState({ source: 'resultados', 
-                                sourceLayer: '10NCENS',
+                                sourceLayer: 'ele2021Cat',
                                 id: hoveredStateId}, { hover: false});
         }
         hoveredStateId = null;
       });
-});   
+});  
+
+
 </script>
  
 
