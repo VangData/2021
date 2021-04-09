@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>¿De qué vive tu vecino?</title>
+<style>
+     @import url('https://fonts.googleapis.com/css?family=Open+Sans:200,400,600,700,800');
+    *{margin: 0; padding: 0;}
+#map {
+    width: 100%;
+    height: 550px;
+
+}
+
+
+</style>
+<script src='https://cdn.rawgit.com/duroty/responsive/master/app.embed.js'></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.js'></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.0.0/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.0.0/mapbox-gl-geocoder.css' type='text/css' />
+<link href='https://api.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
+<script src='https://api.tiles.mapbox.com/mapbox.js/v1.6.3/mapbox.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v1.6.3/mapbox.css' rel='stylesheet' />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:200,400,600,700&display=swap" rel="stylesheet"> <!-- CAMBIAR3 -->
+
+<link rel="stylesheet" type="text/css" href="style.css">
+
+<body>
+    <div id="cabecera">
+        <nav id="menuPartidos">
+        </nav>
+        <div id='geocoder' class='geocoder'></div>
+
+
+<div id='map'>
+    <div id='legend' style="opacity: 1"> 
+        <nav class='legend clearfix'>
+          <h1 id="legend-title">Renta por hogar (en miles de €)</h1></br>
+          <span id="legend1" style='background:#a6611a;opacity:1;'></span>
+          <span id="legend2" style='background:#dfc27d;opacity:0.4;'></span>
+          <span id="legend3" style='background:#80cdc1;opacity:0.6;'></span>
+          <span id="legend4" style='background:#018571;opacity:1;'></span>
+          <div id="labels-legend"><label>12-20</label><label>20-30</label><label>30-40</label><label>+40</label></div>
+        </nav></div></div></div>
+</nav></div></div>
+
+
+<script>
+
+
+mapboxgl.accessToken = 'pk.eyJ1IjoibGF1cjA1IiwiYSI6ImNpbmtmM2FjazAwODF2eG0yNjhteTcxdHIifQ.l7uzjVe2b1L8dHh_Z9JjoQ';
+var map = new mapboxgl.Map({
+container: 'map', // container id
+style: 'mapbox://styles/laur05/cjuvi3xkc8dik1fmtpwe3xjhh', 
+center:  [-4.0222, 39.9], // starting position [lng, lat]
+zoom: 5,// starting zoom
+minZoom: 2,
+maxZoom: 15,
+attributionControl: false,
+});
+var hoveredStateId =  null;
+var searched_lngLat = null;
+
+
+map.on('load', function () {
+// Add a layer showing the state polygons.
+
+
+map.addSource("resultados", {
+    type: 'vector',
+    url: 'mapbox://laur05.7bxdzza9',
+});
+
+var layers = map.getStyle().layers;
+// Find the index of the first symbol layer in the map style
+
+map.addLayer({
+'id': 'tiles-fills-Renta',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['>', 'Renta', -1],
+'paint': {
+    'fill-color': ["interpolate", ["linear", 1],
+                        ["get", "Renta"],
+                        0, "#d6d6d6",
+                        12000, "#a6611a",
+                        20000, "#a6611a",
+                        20001, "#dfc27d",
+                        30000, "#dfc27d",
+                        30001, "#80cdc1",
+                        40000, "#80cdc1",
+                        40001, "#018571",
+                        86006, "#018571",
+                    ],
+    'fill-opacity': 0.7
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills-Salario',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['==', 'Salario', -1],
+'paint': {
+'fill-color': '#5a9c2c',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Salario"],
+        0.00, 0.05,
+        20, 0.05,
+        20.1, 0.4,
+        40, 0.4,
+        40.1, 0.6,
+        60, 0.6,
+        60.1, 1,
+        100., 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills-Desempleo',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['==', 'Desempleo', -1],
+'paint': {
+'fill-color': '#de1600',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Desempleo"],
+        0.00, 0.05,
+        2, 0.05,
+        2.1, 0.4,
+        5, 0.4,
+        5.1, 0.6,
+        10, 0.6,
+        10.1, 1,
+        15, 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills-Pensiones',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['==', 'Pensiones', -1],
+'paint': {
+'fill-color': '#0033d9',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Pensiones"],
+        0.00, 0.05,
+        19.9, 0.05,
+        20, 0.4,
+        29.9, 0.4,
+        30, 0.6,
+        39.9, 0.6,
+        40, 1,
+        100, 1]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills-Capital',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['==', 'Capital', -1],
+'paint': {
+'fill-color': 'purple',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Capital"],
+        0.00, 0.05,
+        10, 0.05,
+        10.1, 0.4,
+        20, 0.4,
+        20.1, 0.6,
+        30, 0.6,
+        100, 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills-Prestaciones',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['==', 'PPensiones', -1],
+'paint': {
+'fill-color': 'orange',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Prestaciones"],
+        0.00, 0.05,
+        1, 0.05,
+        1.1, 0.3,
+        4.9, 0.3,
+        5, 0.6,
+        9.9, 0.6,
+        100, 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'SC-borders',
+'type': 'line',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'SCRentas',
+'filter': ['has', 'NMUN'],
+'paint': {
+"line-color": ["case", ["boolean", ["feature-state", "hover"], false], "black", "white"],
+            "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 2, 0]}
+    }, "admin");
+
+map.addLayer({
+'id': 'tiles-fills1-Renta',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'filter': ['>', 'Renta', -1],
+'paint': {
+ 'fill-color': ["interpolate", ["linear", 1],
+                        ["get", "Renta"],
+                        0, "#d6d6d6",
+                        12000, "#a6611a",
+                        20000, "#a6611a",
+                        20001, "#dfc27d",
+                        30000, "#dfc27d",
+                        30001, "#80cdc1",
+                        40000, "#80cdc1",
+                        40001, "#018571",
+                        86006, "#018571",
+                    ],
+    'fill-opacity': 0.7
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills1-Salario',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'filter': ['==', 'Salario', -1],
+'paint': {
+'fill-color': '#5a9c2c',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Salario"],
+        0.00, 0.05,
+        20, 0.05,
+        20.1, 0.4,
+        40, 0.4,
+        40.1, 0.6,
+        60, 0.6,
+        60.1, 1,
+        100., 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills1-Desempleo',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'filter': ['==', 'Desempleo', -1],
+'paint': {
+'fill-color': '#de1600',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Desempleo"],
+        0.00, 0.05,
+        2, 0.05,
+        2.1, 0.4,
+        5, 0.4,
+        5.1, 0.6,
+        10, 0.6,
+        10.1, 1,
+        15, 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills1-Pensiones',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'filter': ['==', 'Pensiones', -1],
+'paint': {
+'fill-color': '#0033d9',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Pensiones"],
+        0.00, 0.05,
+        19.9, 0.05,
+        20, 0.4,
+        29.9, 0.4,
+        30, 0.6,
+        39.9, 0.6,
+        40, 1,
+        100, 1]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills1-Capital',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'filter': ['==', 'Pensiones', -1],
+'paint': {
+'fill-color': 'purple',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Capital"],
+        0.00, 0.05,
+        10, 0.05,
+        10.1, 0.4,
+        20, 0.4,
+        20.1, 0.6,
+        30, 0.6,
+        100, 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'tiles-fills1-Prestaciones',
+'type': 'fill',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'filter': ['==', 'Pensiones', -1],
+'paint': {
+'fill-color': 'orange',
+'fill-opacity': ["interpolate", ["linear", 100], ["get", "Prestaciones"],
+        0.00, 0.05,
+        1, 0.05,
+        1.1, 0.3,
+        4.9, 0.3,
+        5, 0.6,
+        9.9, 0.6,
+        100, 1.0]
+}}, "admin");
+
+map.addLayer({
+'id': 'Mun-borders',
+'type': 'line',
+'renderingMode': '2d',
+'source': 'resultados',
+'source-layer': 'MunRentas',
+'paint': {
+    "line-color": ["case", ["boolean", ["feature-state", "hover"], false], "black", "white"],
+            "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 2, 0]}
+    }, "admin");
+
+
+// Add zoom and rotation controls to the map.
+var nav = new mapboxgl.NavigationControl( {showCompass:false});
+map.addControl(nav, 'top-left');
+
+// disable map zoom when using scroll
+map.scrollZoom.disable();
+
+
+
+var geocoder = new MapboxGeocoder({
+countries: 'es',
+accessToken: mapboxgl.accessToken,
+mapboxgl: mapboxgl,
+types: 'place',
+placeholder: 'Busca tu calle',
+zoom: 7,
+});
+
+ 
+document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+
+var popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false,
+}); 
+//Hover Renta sc i mun
+map.on('mousemove', 'tiles-fills-Renta', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'SCRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'SCRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var distrito = e.features[0].properties.CDIS;
+        var renta = e.features[0].properties.Renta.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</b><p style='color:grey'> Distrito: " + distrito +  "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><b>Renta</b></br></span><b style='color:#323232'>" + renta + " €</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills-Renta', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'SCRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+map.on('mousemove', 'tiles-fills1-Renta', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'MunRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'MunRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var renta = e.features[0].properties.Renta.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><p style='color:grey;font-weight:200;'>Renta</p></span><b style='color:#323232'>" + renta + " €</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills1-Renta', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'MunRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+
+//Hover Salario sc i mun
+map.on('mousemove', 'tiles-fills-Salario', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'SCRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'SCRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var distrito = e.features[0].properties.CDIS;
+        var salario = e.features[0].properties.Salario.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</b><p style='color:grey'> Distrito: " + distrito +  "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><b>Salario</b></br></span><b style='color:#5a9c2c'>" + salario + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills-Salario', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'SCRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+map.on('mousemove', 'tiles-fills1-Salario', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'MunRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'MunRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var salario = e.features[0].properties.Salario.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><p style='color:grey;font-weight:200;'>Salario</p></span><b style='color:#5a9c2c'>" + salario + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills1-Salario', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'MunRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+//Hover Desempleo sc i mun
+   map.on('mousemove', 'tiles-fills-Desempleo', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'SCRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'SCRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var distrito = e.features[0].properties.CDIS;
+        var desempleo = e.features[0].properties.Desempleo.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</b><p style='color:grey'> Distrito: " + distrito +  "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><b>Desempleo</b></br></span><b style='color:#de1600'>" + desempleo + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills-Desempleo', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'SCRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+map.on('mousemove', 'tiles-fills1-Desempleo', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'MunRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'MunRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var desempleo = e.features[0].properties.Desempleo.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><p style='color:grey;font-weight:200;'>Desempleo</p></span><b style='color:#de1600'>" + desempleo + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills1-Desempleo', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'MunRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+
+      //Hover Pensioens sc i mun
+   map.on('mousemove', 'tiles-fills-Pensiones', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'SCRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'SCRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var distrito = e.features[0].properties.CDIS;
+        var pensiones = e.features[0].properties.Pensiones.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</b><p style='color:grey'> Distrito: " + distrito +  "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><b>Pensiones</b></br></span><b style='color:#0033d9'>" + pensiones + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills-Pensiones', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'SCRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+map.on('mousemove', 'tiles-fills1-Pensiones', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'MunRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'MunRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var pensiones = e.features[0].properties.Pensiones.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><p style='color:grey;font-weight:200;'>Pensiones</p></span><b style='color:#0033d9'>" + pensiones + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills1-Pensiones', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'MunRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+
+      //Hover capital sc i mun
+      map.on('mousemove', 'tiles-fills-Capital', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'SCRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'SCRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var distrito = e.features[0].properties.CDIS;
+        var capital = e.features[0].properties.Capital.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</b><p style='color:grey'> Distrito: " + distrito +  "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><b>Rentas del capital</b></br></span><b style='color:purple'>" + capital + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills-Capital', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'SCRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+map.on('mousemove', 'tiles-fills1-Capital', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'MunRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'MunRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var capital = e.features[0].properties.Capital.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><p style='color:grey;font-weight:200;'>Rentas del capital</p></span><b style='color:purple'>" + capital + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills1-Capital', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'MunRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+
+            //Hover prestaciones sc i mun
+            map.on('mousemove', 'tiles-fills-Prestaciones', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'SCRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'SCRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var distrito = e.features[0].properties.CDIS;
+        var prestaciones = e.features[0].properties.Prestaciones.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</b><p style='color:grey'> Distrito: " + distrito +  "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><b>Otras prestaciones</b></br></span><b style='color:orange'>" + prestaciones + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills-Prestaciones', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'SCRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+map.on('mousemove', 'tiles-fills1-Prestaciones', function(e) {
+    if (e.features.length > 0) {
+          if (hoveredStateId) {          
+            map.setFeatureState({ source: 'resultados', 
+                                  sourceLayer: 'MunRentas',
+                                  id: hoveredStateId}, { hover: false});
+          }
+          hoveredStateId = e.features[0].id;
+          map.setFeatureState({ source: 'resultados', 
+                              sourceLayer: 'MunRentas',
+                              id: hoveredStateId}, { hover: true});
+        }
+
+       map.getCanvas().style.cursor = 'pointer';
+
+        var coordinates = e.features[0].geometry.coordinates.slice();
+        var municipio = e.features[0].properties.NMUN;
+        var prestaciones = e.features[0].properties.Prestaciones.toLocaleString('es-ES');
+
+         popup.setLngLat(e.lngLat)
+         .setHTML("<div style='color:black;font-size:14px;text-align:center;font-family: OpenSans, Open Sans;padding-bottom:3px'><b>" + municipio + "</div><hr><div style='padding-top: 4px; font-size: 14px;font-family: Open Sans;text-align: center;'>" + "<span ><p style='color:grey;font-weight:200;'>Otras prestaciones</p></span><b style='color:orange'>" + prestaciones + " %</b></div>")
+         .addTo(map);
+  });   
+
+  map.on('mouseleave', 'tiles-fills1-Prestaciones', function() {
+      map.getCanvas().style.cursor = '';
+        popup.remove();
+        if (hoveredStateId) {          
+          map.setFeatureState({ source: 'resultados', 
+                                sourceLayer: 'MunRentas',    
+                                id: hoveredStateId}, { hover: false});
+        }
+        hoveredStateId = null;
+      });
+}); 
+
+// BOTONES PARTIDOS
+        var toggleableLayerIds = ['Renta', 'Salario', 'Desempleo', 'Pensiones', 'Capital', 'Prestaciones']; 
+        // Poner los partidos por orden en el que han ganado? // CAMBIAR COMPROMIS POR MAS PAIS
+        var colors1 = ['#a6611a', "#5a9c2c", "#de1600", "#0033d9", "purple", "orange"];
+        var colors2 = ['#dfc27d', "#5a9c2c", "#de1600", "#0033d9", "purple", "orange"];
+        var colors3 = ['#80cdc1', "#5a9c2c", "#de1600", "#0033d9", "purple", "orange"];
+        var colors4 = ['#018571', "#5a9c2c", "#de1600", "#0033d9", "purple", "orange"];
+        var titles = ['Renta por hogar (en miles de €)', '% de la renta',  '% de la renta', '% de la renta', '% de la renta','% de la renta']
+        // Colores de cada partido de toogleableLayerIds, las posiciones tienen que ser las mismas.
+        var labels = ["<label>12-20</label><label>20-30</label><label>30-40</label><label>+40</label>",
+                     "<label>0-20</label><label>20-40</label><label>40-60</label><label>+60</label>",
+                     "<label>0-2</label><label>1-5</label><label>5-10</label><label>10-15</label>",
+                     "<label>0-20</label><label>20-30</label><label>30-40</label><label>+40</label>",
+                     "<label>0-10</label><label>10-20</label><label>20-30</label><label>+30</label>",
+                     "<label>0-1</label><label>1-5</label><label>5-10</label><label>+10</label>"]
+
+        for (var i = 0; i < toggleableLayerIds.length; i++) {
+            var id = toggleableLayerIds[i];
+            var link = document.createElement('button');
+            link.href = '#';
+            link.className = 'desactive';
+            link.id = id;
+            link.textContent = id;
+            if(i == 0){
+              link.className = 'active';
+            }
+
+            link.onclick = function (e) {
+              var clickedLayer = this.textContent;
+              e.preventDefault();
+              e.stopPropagation();
+              var visibility = map.getLayoutProperty(('tiles-fills-Desempleo', 'tiles-fills1-Desempleo'), 'visibility');
+
+              if (visibility === 'visible') {
+                  for (var j = 0; j < toggleableLayerIds.length; j++) {
+                    if(clickedLayer == toggleableLayerIds[j]){
+                      if(clickedLayer){
+                        map.setFilter('tiles-fills-'+ toggleableLayerIds[j], ['>', toggleableLayerIds[j], -1])
+                        map.setFilter('tiles-fills1-'+ toggleableLayerIds[j], ['>', toggleableLayerIds[j], -1])
+                       // La capa que hemos clicado la filtra en el mapa (los valores > 1)
+                        document.getElementById('legend1').style.backgroundColor = colors1[j];
+                        document.getElementById('legend1').style.opacity = 0.05;
+                        document.getElementById('legend2').style.backgroundColor = colors2[j];
+                        document.getElementById('legend2').style.opacity = 0.4;
+                        document.getElementById('legend3').style.backgroundColor = colors3[j];
+                        document.getElementById('legend3').style.opacity = 0.6;
+                        document.getElementById('legend4').style.backgroundColor = colors4[j];
+                        document.getElementById('legend4').style.opacity = 1;
+                        document.getElementById('labels-legend').innerHTML = labels[j];
+                        document.getElementById('legend-title').innerHTML = titles[j]
+                      }
+                    }else{
+                       if(toggleableLayerIds[j] != "Renta"){
+                         map.setFilter('tiles-fills-'+ toggleableLayerIds[j], ['==', toggleableLayerIds[j], -1]) // Las que no hemos clicado no los filtra (valores -1, que no habrán)
+                         map.setFilter('tiles-fills1-'+ toggleableLayerIds[j], ['==', toggleableLayerIds[j], -1]) // Las que no hemos clicado no los filtra (valores -1, que no habrán)
+                         
+                       }
+                       document.getElementById(toggleableLayerIds[j]).className = 'desactive';
+                    }
+                    if(clickedLayer == "Renta"){
+                          map.setFilter('tiles-fills-Renta', ['>', 'Renta', -1]) // He puesto psoe, pero sirve para filtrar o no los datos del Layer ResultadosTodos.
+                          map.setFilter('tiles-fills1-Renta', ['>', 'Renta', -1]) // He puesto psoe, pero sirve para filtrar o no los datos del Layer ResultadosTodos.
+                           document.getElementById('legend').style.opacity = 1;
+                    }else{
+                          map.setFilter('tiles-fills-Renta', ['==', 'Renta', -1])
+                          map.setFilter('tiles-fills1-Renta', ['==', 'Renta', -1])
+                    }
+                  }          
+                  this.className = 'active'; 
+                  //console.log(this);            
+              }
+            };
+
+            var layers = document.getElementById('menuPartidos');
+            layers.appendChild(link);
+
+        }  // CLOSE for
+
+        
+
+
+
+</script>
+ 
+
+   
+	</body>
+</html>
