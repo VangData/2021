@@ -190,6 +190,7 @@ body {
   
   .desc {
     margin: 1em 0.75em 0 0;
+    max-width:30v
     
     font-size: 0.77777em;
     line-height: 1.5em;
@@ -201,7 +202,7 @@ body {
   
   /* ================ Timeline Media Queries ================ */
   
-  @media screen and (max-width: 600px) {
+  @media screen and (max-width: 550) {
   
   .timeline {
        width: 100%;
