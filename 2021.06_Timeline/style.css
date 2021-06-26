@@ -201,7 +201,7 @@ body {
   
   /* ================ Timeline Media Queries ================ */
   
-  @media screen and (max-width: 500px) {
+  @media screen and (max-width: 600px) {
   
   .timeline {
        width: 100%;
