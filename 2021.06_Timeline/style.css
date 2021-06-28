@@ -28,7 +28,7 @@ body {
   
   .timeline {
     position: relative;
-    width: 660px;
+    width: 550px;
     margin: 0 auto;
     margin-top: 20px;
     padding: 1em 0;
@@ -69,14 +69,14 @@ body {
   
   .direction-l {
     position: relative;
-    width: 300px;
+    width: 250px;
     float: left;
     text-align: right;
   }
   
   .direction-r {
     position: relative;
-    width: 300px;
+    width: 250px;
     float: right;
   }
   
@@ -183,7 +183,7 @@ body {
     display: inline-block;
     padding: 4px 6px;
     background: rgb(248,248,248);
-    max-width: 15vw;
+    max-width: 12vw;
     text-align:left;
     line-height: 1.2em;
   }
